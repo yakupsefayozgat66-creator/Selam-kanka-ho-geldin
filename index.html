@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Karanlık Labirent - Kaçış</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        canvas { display: block; }
+        #overlay {
+            position: absolute; top: 10px; left: 10px; color: #600; 
+            font-weight: bold; pointer-events: none; text-shadow: 2px 2px 5px #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">RUHLAR YAKLAŞIYOR... <span id="keys">0</span>/5</div>
+    <canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const TILE_SIZE = 50;
+const player = { x: 75, y: 75, r: 10, speed: 3 };
+const ghost = { x: 500, y: 400, speed: 1.2 };
+let items = [];
+let collected = 0;
+
+// Basit Bir Labirent Haritası (1 = Duvar, 0 = Yol)
+const map = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,0,1,0,1,1,1,0,1,0,1,0,1],
+    [1,0,1,0,0,0,0,0,1,0,0,0,1,0,1],
+    [1,0,1,1,1,1,1,0,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+    [1,1,1,0,1,0,1,1,1,1,1,0,1,1,1],
+    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+
+// Eşyaları rastgele yollara yerleştir
+function initItems() {
+    for(let i=0; i<5; i++) {
+        items.push({ x: Math.random()*600+100, y: Math.random()*300+100 });
+    }
+}
+
+const keys = {};
+window.onkeydown = (e) => keys[e.key] = true;
+window.onkeyup = (e) => keys[e.key] = false;
+
+function checkWall(nx, ny) {
+    let gridX = Math.floor(nx / TILE_SIZE);
+    let gridY = Math.floor(ny / TILE_SIZE);
+    return map[gridY] && map[gridX] && map[gridY][gridX] === 1;
+}
+
+function update() {
+    let nextX = player.x;
+    let nextY = player.y;
+
+    if(keys["ArrowUp"] || keys["w"]) nextY -= player.speed;
+    if(keys["ArrowDown"] || keys["s"]) nextY += player.speed;
+    if(keys["ArrowLeft"] || keys["a"]) nextX -= player.speed;
+    if(keys["ArrowRight"] || keys["d"]) nextX += player.speed;
+
+    // Duvar Çarpışma Kontrolü
+    if(!checkWall(nextX, player.y)) player.x = nextX;
+    if(!checkWall(player.x, nextY)) player.y = nextY;
+
+    // Hayalet Takibi (Yavaşça süzülür)
+    ghost.x += (player.x - ghost.x) * 0.01;
